@@ -1,0 +1,38 @@
+.login_window_container {
+    background-image: url("../../assets/images/backgroundBlurImage.svg");
+    background-size: cover;
+    width: 100vw;
+  }
+
+  .login-glass-effect {
+    width: 100%;
+    background-color: rgba(20, 20, 20, 0.5);
+  }
+  
+  .login_input {
+    border: 1px solid #7f1e85;
+    padding-left: 10px;
+    margin: 10px;
+    border-radius: 5px;
+    height: 40px;
+  }
+
+  .login_input:focus{
+    outline: none;
+  }
+  .login_input:focus::placeholder {
+    color: #7f1e85;
+  }
+  
+  .login_box{
+    background-color: rgba(255, 255, 255, 0.95);
+    
+  }
+
+  @supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
+    .login_box {
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      background-color: rgba(255, 255, 255, 0.25);  
+    }
+  }
