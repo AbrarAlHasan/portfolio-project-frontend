@@ -1,17 +1,24 @@
-import React, { useRef, useState } from "react";
+import React, { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { number, string, z } from "zod";
 import "../style.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import VisibleIcon from "../../../assets/icons/visibility";
 import VisibleOffIcon from "../../../assets/icons/visibility_off";
+import { registerUser } from "../../../Axios/Authentication/authentication";
+import { AuthContext } from "../../../Context/AuthContext/AuthContext";
 
 function Index() {
+  const navigation = useNavigate();
   const schema = z
     .object({
-      name: string().min(3, { message: "Min 3 Characters Required" }),
+      firstName: string().min(3, { message: "Min 3 Characters Required" }),
+      lastName: string().min(3, { message: "Min 3 Characters Required" }),
+      phoneNumber: number().min(10, {
+        message: "Min 10 Characters Required",
+      }),
       email: string().email(),
       password: string().min(8, { message: "Min 8 Characters are Required" }),
       re_password: string().min(8, {
@@ -22,24 +29,30 @@ function Index() {
       if (re_password !== password) {
         ctx.addIssue({
           code: "custom",
-          path:["re_password"],
+          path: ["re_password"],
           message: "The passwords didn't match",
         });
       }
     });
-
-  const { register, control, handleSubmit, formState, reset } = useForm({
-    defaultValues: { name: "", email: "", password: "", re_password: "" },
+  const { setUserDetails } = useContext(AuthContext);
+  const { register, handleSubmit, formState, reset } = useForm({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phoneNumber: null,
+      email: "",
+      password: "",
+      re_password: "",
+    },
     resolver: zodResolver(schema),
   });
 
-  const passRef = useRef<HTMLInputElement>(null);
   const [showPass, setShowPass] = useState(false);
   const [showRePass, setShowRePass] = useState(false);
 
   //!Show and Hide Password Functionality
   const changePassVisibility = (key: string): void => {
-    key == "password" ? setShowPass(!showPass) : setShowRePass(!showRePass);
+    key === "password" ? setShowPass(!showPass) : setShowRePass(!showRePass);
     //#Tried to Do using Ref but the Ref is orking but the Hook form is making error and not PRinting the Values
     // if (passRef.current != undefined) {
     //   passRef.current.type = showPass ? "password" : "text";
@@ -47,16 +60,26 @@ function Index() {
   };
 
   const { errors } = formState;
-  console.log(errors)
-  const onSubmit = (formValues: {
-    name?: string;
-    email?: string;
-    password?: string;
-    re_password?: string;
-  }): void => {
-    console.log(formValues);
-    reset();
-    
+  const onSubmit = async (formValues: {
+    firstName: string;
+    email: string;
+    password: string;
+    re_password: string;
+    lastName: string;
+    phoneNumber: number | null;
+  }): Promise<void> => {
+    try {
+      const response = await registerUser(formValues);
+
+      if (response.status === 200) {
+        console.log(response.data);
+        setUserDetails(response.data);
+        navigation("/otpVerification");
+        reset();
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
   return (
     <div className="w-screen login_window_container">
@@ -70,12 +93,20 @@ function Index() {
             >
               <div className="w-full ">
                 <input
-                  {...register("name")}
-                  placeholder="Name"
+                  {...register("firstName")}
+                  placeholder="First Name"
                   className="login_input w-11/12"
                 />
                 <div style={{ color: "red" }} className="ml-[10px]">
-                  {errors?.name?.message}
+                  {errors?.firstName?.message}
+                </div>
+                <input
+                  {...register("lastName")}
+                  placeholder="Last Name"
+                  className="login_input w-11/12"
+                />
+                <div style={{ color: "red" }} className="ml-[10px]">
+                  {errors?.lastName?.message}
                 </div>
               </div>
               <div className="w-full ">
@@ -88,12 +119,22 @@ function Index() {
                   {errors?.email?.message}
                 </div>
               </div>
+              <div className="w-full">
+                <input
+                  {...register("phoneNumber", { valueAsNumber: true })}
+                  placeholder="Phone Number"
+                  className="login_input w-11/12"
+                />
+                <div style={{ color: "red" }} className="ml-[10px]">
+                  {errors?.phoneNumber?.message}
+                </div>
+              </div>
               <div className="w-full relative">
                 <input
                   {...register("password")}
                   placeholder="Password"
                   className="login_input w-11/12 "
-                  type={showPass?"password":"text"}
+                  type={showPass ? "password" : "text"}
                 />
                 <div
                   className="absolute right-7 top-[20px] hover:cursor-pointer"
@@ -114,8 +155,7 @@ function Index() {
                   {...register("re_password")}
                   placeholder="Re-Password"
                   className="login_input w-11/12 "
-                  type={showRePass?"password":"text"}
-
+                  type={showRePass ? "password" : "text"}
                 />
                 <div
                   className="absolute right-7 top-[20px] hover:cursor-pointer"
